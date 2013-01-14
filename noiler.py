@@ -219,7 +219,7 @@ def quote_show(irc, nick, userhost, target, cmd, args):
 			irc.notice(target, "Quote #%d: %s" % (r, q.show(r)))
 		return True
 	except IndexError:
-		irc.notice(target, "Diese Quote gibt es nicht.")
+		irc.notice(target, "Diese Quote gibt es nicht. Es gibt %d Quotes." % q.count())
 		return True
 
 def time(irc, nick, userhost, target, cmd, args):
