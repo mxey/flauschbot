@@ -213,7 +213,7 @@ def quote_show(irc, nick, userhost, target, cmd, args):
 				r = int(args)
 				irc.notice(target, "Quote #%d: %s" % (r, q.show(r)))
 			except ValueError:
-				irc.notice(target, "Lernu numerische Zahlen. !quote 1234.")
+				irc.notice(target, "Lernu Ganzzahl Style! (!quote 1234)")
 		else:
 			r = randint(0, q.count()) + 1
 			irc.notice(target, "Quote #%d: %s" % (r, q.show(r)))
