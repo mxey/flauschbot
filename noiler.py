@@ -342,7 +342,7 @@ msg_triggers = [
 	[['!addquote'], ['<Text>', 'Text als Quote hinzufügen'], CMD_CHANNEL, quote_add],
 	[['!quote'], 'Zufällige Quote anzeigen', CMD_CHANNEL, quote_show],
 	[['!quote'], ['<Nummer>', 'Bestimmte Quote anzeigen'], CMD_CHANNEL, quote_show],
-	[['!delquote'], ['<Nummer>', 'Quote löschen'], CMD_CHANNEL, quote_del],
+	#[['!delquote'], ['<Nummer>', 'Quote löschen'], CMD_CHANNEL, quote_del],
 	# Tools
 	[['!time'], 'Systemzeit ausgeben', CMD_CHANNEL | CMD_QUERY, time],
 	[['!ignore'], ['<Usermask> <Channel> <Owner-Passwort>', 'Usermask von Botbenutzung ausschließen'], CMD_QUERY, ignore],
