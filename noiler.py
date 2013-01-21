@@ -92,6 +92,7 @@ def twitter(irc, nick, userhost, target, cmd, args, what):
 	a = []
 	k = {}
 	args = args.split(' ')
+	success = 'Tweet ist raus.'
 
 	m = re.match(r"(?:https?://(?:[^.]+.)?twitter.com/(?P<username>[^/]*)/status(?:es)?/)?(?P<status_id>\d+)", args[0])
 	if what == 'tweet' or what == 'reply':
