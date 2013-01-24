@@ -372,7 +372,7 @@ def twitter_mentions_thread(api, irc):
 			sleep(30)
 			for tweet in api.mentions():
 				if tweet.created_at > datetime.utcnow() - timedelta(seconds=30):
-					irc.notice(config.chan, ("Tweet von @%s: %s" % (tweet.user.screen_name, unescape(tweet.text).replace('\n', ' '))).encode('utf-8'))
+					irc.notice(config.chan, ("Tweet %s von @%s: %s" % (tweet.id_str, tweet.user.screen_name, unescape(tweet.text).replace('\n', ' '))).encode('utf-8'))
 		except Exception, e:
 			print "!!! Exception in twitter_mentions_thread:"
 			print e
