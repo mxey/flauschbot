@@ -88,6 +88,10 @@ class Ignores:
 def twitter(irc, nick, userhost, target, cmd, args, what):
 	# print '--- twitter <%s!%s/%s> (%s, %s) (%s)' % (nick, userhost, target, cmd, args, what)
 
+	if args == None:
+		irc.notice(target, 'Bitte was?')
+		return
+
 	f = None
 	a = []
 	k = {}
