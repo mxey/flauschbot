@@ -325,7 +325,7 @@ def handle_privmsg(irc, nick, userhost, target, message):
 							doc = html5lib.parse(r.content, treebuilder="etree", namespaceHTMLElements=False)
 							title = doc.find('.//title').text.strip()
 							title = ' '.join(title.split())
-							irc.notice(target, ("<%s> %s" % (url, title)).encode('utf-8'))
+							irc.notice(target, ("%s <%s>" % (title, url)).encode('utf-8'))
 						else:
 							log_error('Ich kann nicht mit in zu "%s"-Dokumenten.' % r.headers['content-type'])
 					except (AttributeError, requests.exceptions.RequestException) as e:
