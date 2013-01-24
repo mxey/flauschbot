@@ -6,13 +6,24 @@ import config
 import threading
 import tweepy
 
+# for the title tag extraction
+import requests
+import html5lib
+import elementtree
+
 from noilib.helpers import *
 from noilib.connection import IRCConnection
 from random import randint
 from time import sleep
 from datetime import datetime, timedelta
 from fnmatch import fnmatchcase
+from sys import stdout, stderr
 
+def log(s):
+	stdout.write("--- " + str(s) + "\n")
+
+def log_error(s):
+	stderr.write("!!! ERROR: " + str(s) + "\n")
 
 class Quotes:
 	def __init__(self, target):
@@ -292,7 +303,7 @@ def quit(irc, nick, userhost, target, cmd, args):
 def handle_privmsg(irc, nick, userhost, target, message):
 	if check_ignored(target, nick + '!' + userhost):
 		# silently ignore
-		print '### ignored command from %s!%s' % (nick, userhost)
+		log('### ignored command from %s!%s' % (nick, userhost))
 		return True
 
 	if is_channel(target):
@@ -303,6 +314,29 @@ def handle_privmsg(irc, nick, userhost, target, message):
 				irc.notice(target, ("Tweet von @%s: %s" % (tweet.user.screen_name, unescape(tweet.text).replace('\n', ' '))).encode('utf-8'))
 			except Exception as e:
 				irc.notice(target, 'Das hat nicht geklappt: %s' % e)
+		else:
+			m = re.search(r"((?<=\()https?://(?:[A-Za-z0-9\.\-_~:/\?#\[\]@!\$&'\(\)\*\+,;=]|%[A-Fa-f0-9]{2})+(?=\)))|(?:https?://(?:[A-Za-z0-9\.\-_~:/\?#\[\]@!\$&'\(\)\*\+,;=]|%[A-Fa-f0-9]{2})+)", message)
+			if m:
+				def lookup_url(url, irc):
+					try:
+						r = requests.head(url, timeout=3, verify=False)
+						if any(r.headers['content-type'].split(';')[0] in s for s in ['text/html', 'text/xml', 'application/xhtml+xml']):
+							r = requests.get(url, timeout=3, verify=False)
+							doc = html5lib.parse(r.content, treebuilder="etree", namespaceHTMLElements=False)
+							title = doc.find('.//title').text.strip()
+							title = ' '.join(title.split())
+							irc.notice(target, ("<%s> %s" % (url, title)).encode('utf-8'))
+						else:
+							log_error('Ich kann nicht mit in zu "%s"-Dokumenten.' % r.headers['content-type'])
+					except (AttributeError, requests.exceptions.RequestException) as e:
+						log_error("%s: %s" % (type(e).__name__, e))
+					except Exception as e:
+						log_error("%s: %s" % (type(e).__name__, e))
+						irc.notice(target, 'Fehler bei <%s>: %s: %s' % (url, type(e).__name__, e))
+
+				t = threading.Thread(target=lookup_url, args=(m.group(0), irc))
+				t.daemon = True
+				t.start()
 
 	try:
 		cmd, args = message.split(' ', 1)
@@ -374,16 +408,15 @@ def twitter_mentions_thread(api, irc):
 				if tweet.created_at > datetime.utcnow() - timedelta(seconds=30):
 					irc.notice(config.chan, ("Tweet %s von @%s: %s" % (tweet.id_str, tweet.user.screen_name, unescape(tweet.text).replace('\n', ' '))).encode('utf-8'))
 		except Exception, e:
-			print "!!! Exception in twitter_mentions_thread:"
-			print e
+			log_error("!!! Exception in twitter_mentions_thread: %s" % e)
 
 # Twitter init
-print "Verifying Twitter credentials..."
+log("Verifying Twitter credentials...")
 user = api.verify_credentials()
 if user:
-	print 'Authenticated with Twitter as @%s' % user.screen_name
+	log('Authenticated with Twitter as @%s' % user.screen_name)
 else:
-	print 'Could not verify credientials. Check your Twitter credentials in config.py!'
+	log('Could not verify credientials. Check your Twitter credentials in config.py!')
 	sys.exit(1)
 
 # main
