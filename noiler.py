@@ -295,6 +295,15 @@ def handle_privmsg(irc, nick, userhost, target, message):
 		print '### ignored command from %s!%s' % (nick, userhost)
 		return True
 
+	if is_channel(target):
+		m = re.search(r"https?://(?:[^.]+.)?twitter.com/(?P<username>[^/]*)/status(?:es)?/(?P<status_id>\d+)", message)
+		if m:
+			try:
+				tweet = api.get_status(m.group('status_id'))
+				irc.notice(target, ("Tweet von @%s: %s" % (tweet.user.screen_name, unescape(tweet.text).replace('\n', ' '))).encode('utf-8'))
+			except Exception as e:
+				irc.notice(target, 'Das hat nicht geklappt: %s' % e)
+
 	try:
 		cmd, args = message.split(' ', 1)
 	except ValueError:
@@ -313,15 +322,6 @@ def handle_privmsg(irc, nick, userhost, target, message):
 				kwargs = trigger[5] if len(trigger) > 5 else {}
 				if trigger[3](irc, nick, userhost, target, cmd, args, *splatargs, **kwargs):
 					return True
-
-	if is_channel(target):
-		m = re.search(r"https?://(?:[^.]+.)?twitter.com/(?P<username>[^/]*)/status(?:es)?/(?P<status_id>\d+)", message)
-		if m:
-			try:
-				tweet = api.get_status(m.group('status_id'))
-				irc.notice(target, ("Tweet von @%s: %s" % (tweet.user.screen_name, unescape(tweet.text).replace('\n', ' '))).encode('utf-8'))
-			except Exception as e:
-				irc.notice(target, 'Das hat nicht geklappt: %s' % e)
 
 	return False
 
