@@ -1,6 +1,7 @@
 # adapt for your network
 server = 'irc.freenode.net'
 port = 6667
+ssl = False
 password = ''
 nick = 'oiler_er_innen'
 realname = 'oiler_er_innen'
