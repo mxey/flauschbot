@@ -4,14 +4,15 @@
 from noilib.parse import parse_irc_line, parse_modes, parse_prefix
 from sys import stdout, stderr
 
-import sys, socket
+import sys, socket, ssl
 
 class IRCConnection:
   """Connects to an IRC server and allows you to send and receive messages."""
 
-  def __init__(self, server='localhost', port=6667, password=None, nick=None, realname=None, user=None, channels=[]):
+  def __init__(self, server='localhost', port=6667, ssl=False, password=None, nick=None, realname=None, user=None, channels=[]):
     self.server = server
     self.port = port
+    self.ssl = ssl
     self.password = password
     self.nick = nick
     self.realname = realname
@@ -95,6 +96,8 @@ class IRCConnection:
 
     try:
       self.socket.connect((self.server, self.port))
+      if self.ssl:
+        self.socket = ssl.wrap_socket(self.socket)
 
       # TODO error handling :o
       if self.password:

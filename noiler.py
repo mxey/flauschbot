@@ -420,7 +420,7 @@ else:
 	sys.exit(1)
 
 # main
-irc = IRCConnection(server=config.server, port=config.port, password=config.password, nick=config.nick, realname=config.realname, user=config.user, channels=[config.chan])
+irc = IRCConnection(server=config.server, port=config.port, ssl=config.ssl, password=config.password, nick=config.nick, realname=config.realname, user=config.user, channels=[config.chan])
 irc.on('privmsg', handle_privmsg)
 irc.on('kick', handle_kick)
 #irc.on('*', handle_unknown)
