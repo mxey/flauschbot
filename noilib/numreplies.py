@@ -28,6 +28,7 @@ numerics = {
   '324': 'RPL_CHANNELMODEIS',
   '331': 'RPL_NOTOPIC',
   '332': 'RPL_TOPIC',
+  '333': 'RPL_TOPICTS',
   '341': 'RPL_INVITING',
   '342': 'RPL_SUMMONING',
   '346': 'RPL_INVITELIST',
