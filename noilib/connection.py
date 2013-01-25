@@ -86,6 +86,10 @@ class IRCConnection:
           return True
     return False
 
+  def join_channels(self, *args):
+    for channel in self.channels:
+      self.join(channel)
+
   def connect(self):
     self.socket.settimeout(300)
 
@@ -98,8 +102,7 @@ class IRCConnection:
       self.send('NICK', self.nick)
       # 12 = +iw
       self.send('USER', self.user, '12', '*', ':' + self.realname)
-      for channel in self.channels:
-        self.join(channel)
+      self.on('RPL_WELCOME', self.join_channels)
     except socket.timeout:
       self.log_error("Timeout connecting. Check your config and internet connection and try again.")
       sys.exit(1)
