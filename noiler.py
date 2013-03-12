@@ -267,7 +267,7 @@ def ignore(irc, nick, userhost, target, cmd, args):
 		else:
 			irc.notice(nick, "Nice try.")
 		return False
-	except ValueError:
+	except ValueError, AttributeError:
 		irc.notice(nick, "Süntaks, kennst du es? Fersuche !help.")
 		return True
 
