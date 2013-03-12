@@ -67,7 +67,7 @@ class IRCConnection:
     else:
       nick, userhost = (None, None)
 
-    self.log_debug('dispatch(prefix="%s", cmd="%s", lookup_cmd="%s")' % (prefix, cmd, lookup_cmd))
+    #self.log_debug('dispatch(prefix="%s", cmd="%s", lookup_cmd="%s")' % (prefix, cmd, lookup_cmd))
 
     if lookup_cmd in self.callbacks:
       if cmd == 'PRIVMSG' or cmd == 'KICK':
@@ -89,7 +89,7 @@ class IRCConnection:
       fargs.insert(0, self)
 
       for func in self.callbacks[lookup_cmd]:
-        self.log_debug('fargs = %s' % fargs)
+        self.log_debug('func=%s fargs=%s' % (func.__name__, repr(fargs)))
         if func(*fargs):
           return True
     return False
