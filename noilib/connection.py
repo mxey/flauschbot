@@ -92,54 +92,67 @@ class IRCConnection:
       self.join(channel)
 
   def connect(self):
-    self.socket.settimeout(300)
-
     try:
-      self.socket.connect((self.server, self.port))
-      if self.ssl:
-        self.socket = ssl.wrap_socket(self.socket)
+      self.socket.settimeout(300)
 
-      # TODO error handling :o
-      if self.password:
-        self.send('PASS', self.password)
-      self.send('NICK', self.nick)
-      # 12 = +iw
-      self.send('USER', self.user, '12', '*', ':' + self.realname)
-      self.on('RPL_WELCOME', self.join_channels)
-    except socket.timeout:
-      self.log_error("Timeout connecting. Check your config and internet connection and try again.")
-      sys.exit(1)
+      try:
+        self.socket.connect((self.server, self.port))
+        if self.ssl:
+          self.socket = ssl.wrap_socket(self.socket)
 
-    try:
-      buffer = ''
-      while True:
-        try:
-          buffer += self.socket.recv(1024)
-          lines = buffer.split("\n")
-          buffer = lines.pop()
+        # TODO error handling :o
+        if self.password:
+          self.send('PASS', self.password)
+        self.send('NICK', self.nick)
+        # 12 = +iw
+        self.send('USER', self.user, '12', '*', ':' + self.realname)
+        self.on('RPL_WELCOME', self.join_channels)
+      except socket.timeout:
+        self.log_error("Timeout connecting. Check your config and internet connection and try again.")
+        sys.exit(1)
 
-          for raw in lines:
-            self.recv(raw)
+      try:
+        buffer = ''
+        while True:
+          try:
+            buffer += self.socket.recv(1024)
+            lines = buffer.split("\n")
+            buffer = lines.pop()
 
-            (prefix, command, args) = parse_irc_line(raw)
+            for raw in lines:
+              self.recv(raw)
 
-            handled = self.dispatch(prefix, command, args)
+              (prefix, command, args) = parse_irc_line(raw)
 
-            if not handled:
-              handled &= self.dispatch(prefix, command, args, fallback=True)
+              handled = self.dispatch(prefix, command, args)
 
-            if not handled:
-              if command == 'PING':
-                self.send('PONG', ':' + args[0])
+              if not handled:
+                handled &= self.dispatch(prefix, command, args, fallback=True)
 
-        except socket.timeout:
-          self.log_error("Timeout, reconnecting...")
-          self.connect()
-        except KeyboardInterrupt, SystemExit:
-          self.log_error("Caught interrupt, quitting...")
-          sys.exit(0)
+              if not handled:
+                if command == 'PING':
+                  self.send('PONG', ':' + args[0])
+
+          except KeyboardInterrupt, SystemExit:
+            self.log_error("Caught interrupt, quitting...")
+            sys.exit(0)
+      except socket.timeout:
+        self.log_error("Timeout, reconnecting...")
+        self.reconnect()
+      except socket.error:
+        self.log_error("Socket error, reconnecting...")
+        self.reconnect()
     finally:
       self.socket.close()
+
+  def reconnect(self):
+    try:
+      self.socket.close()
+    except socket.error:
+      pass
+    finally:
+      self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      self.connect()
 
   def join(self, channel, password=None):
     if password:

@@ -208,6 +208,7 @@ def help(irc, nick, userhost, target, cmd, args):
 				y = cmd[1]
 			cmd_list.append(x)
 			irc.notice(target, ', '.join(cmd_list))
+
 	return True
 
 def quote_add(irc, nick, userhost, target, cmd, args):
@@ -365,6 +366,10 @@ def handle_kick(irc, nick, userhost, target, victim):
 	irc.send('JOIN', target)
 	return True
 
+def handle_quit(irc, nick, userhost, target, victim):
+	irc.reconnect()
+	return True
+
 def handle_unknown(irc, prefix, command, args):
 	# print '@@@ UNKNOWN: %s %s %s' % (prefix, command, args)
 	return False
@@ -425,6 +430,7 @@ else:
 irc = IRCConnection(server=config.server, port=config.port, ssl=config.ssl, password=config.password, nick=config.nick, realname=config.realname, user=config.user, channels=[config.chan])
 irc.on('privmsg', handle_privmsg)
 irc.on('kick', handle_kick)
+irc.on('quit', handle_quit)
 #irc.on('*', handle_unknown)
 
 t = threading.Thread(target=twitter_mentions_thread, args=(api, irc))
