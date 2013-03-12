@@ -207,7 +207,7 @@ def help(irc, nick, userhost, target, cmd, args):
 				x = ' oder '.join(cmd[0])
 				y = cmd[1]
 			cmd_list.append(x)
-			irc.notice(target, ', '.join(cmd_list))
+	irc.notice(target, ', '.join(cmd_list))
 
 	return True
 
