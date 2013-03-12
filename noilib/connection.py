@@ -22,6 +22,8 @@ class IRCConnection:
     self.channels = channels
     self.callbacks = {}
 
+    self.ended = False
+
     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
   def log_send(self, line):
@@ -36,6 +38,9 @@ class IRCConnection:
 
   def log_error(self, line):
     stderr.write("!!! %s\n" % line)
+
+  def end(self):
+    self.ended = True
 
   def sendline(self, line):
     self.log_send(line)
@@ -113,37 +118,36 @@ class IRCConnection:
         self.log_error("Timeout connecting. Check your config and internet connection and try again.")
         sys.exit(1)
 
-      try:
-        buffer = ''
-        while True:
-          try:
-            buffer += self.socket.recv(1024)
-            lines = buffer.split("\n")
-            buffer = lines.pop()
+      buffer = ''
+      while not self.ended:
+        try:
+          buffer += self.socket.recv(1024)
+          lines = buffer.split("\n")
+          buffer = lines.pop()
 
-            for raw in lines:
-              self.recv(raw)
+          for raw in lines:
+            self.recv(raw)
 
-              (prefix, command, args) = parse_irc_line(raw)
+            (prefix, command, args) = parse_irc_line(raw)
 
-              handled = self.dispatch(prefix, command, args)
+            handled = self.dispatch(prefix, command, args)
 
-              if not handled:
-                handled &= self.dispatch(prefix, command, args, fallback=True)
+            if not handled:
+              handled &= self.dispatch(prefix, command, args, fallback=True)
 
-              if not handled:
-                if command == 'PING':
-                  self.send('PONG', ':' + args[0])
+            if not handled:
+              if command == 'PING':
+                self.send('PONG', ':' + args[0])
 
-          except KeyboardInterrupt, SystemExit:
-            self.log_error("Caught interrupt, quitting...")
-            sys.exit(0)
-      except socket.timeout:
-        self.log_error("Timeout, reconnecting...")
-        self.reconnect()
-      except socket.error:
-        self.log_error("Socket error, reconnecting...")
-        self.reconnect()
+        except KeyboardInterrupt:
+          self.log_error("Caught keyboard interrupt, quitting...")
+          sys.exit(0)
+    except socket.timeout as e:
+      self.log_error("Timeout (%s), reconnecting..." % e)
+      self.reconnect()
+    except socket.error as e:
+      self.log_error("Socket error (%s), reconnecting..." % e)
+      self.reconnect()
     finally:
       self.socket.close()
 
