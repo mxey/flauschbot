@@ -197,6 +197,7 @@ def help(irc, nick, userhost, target, cmd, args):
 		target = nick
 
 	irc.notice(target, 'Mögliche Befehle:')
+	cmd_list = []
 	for cmd in msg_triggers:
 		if cmd[1] and cmd[2] & flag == flag:
 			if type(cmd[1]) == list:
@@ -205,7 +206,8 @@ def help(irc, nick, userhost, target, cmd, args):
 			else:
 				x = ' oder '.join(cmd[0])
 				y = cmd[1]
-			irc.notice(target, x + ' - ' + y)
+			cmd_list.append(x)
+			irc.notice(target, ', '.join(cmd_list))
 	return True
 
 def quote_add(irc, nick, userhost, target, cmd, args):
