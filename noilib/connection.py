@@ -98,10 +98,12 @@ class IRCConnection:
     for channel in self.channels:
       self.join(channel)
 
+  def update_nick(self, irc, user, userhost, event, args):
+    self.nick = args[0]
+
   def connect(self):
     try:
       self.socket.settimeout(300)
-
       try:
         self.socket.connect((self.server, self.port))
         if self.ssl:
@@ -114,6 +116,8 @@ class IRCConnection:
         # 12 = +iw
         self.send('USER', self.user, '12', '*', ':' + self.realname)
         self.on('RPL_WELCOME', self.join_channels)
+        self.on('RPL_WELCOME', self.update_nick)
+        self.on('NICK', self.update_nick)
       except socket.timeout:
         self.log_error("Timeout connecting. Check your config and internet connection and try again.")
         sys.exit(1)
