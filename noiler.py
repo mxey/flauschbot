@@ -188,18 +188,24 @@ def info(irc, nick, userhost, target, cmd, args):
 	return True
 
 def help(irc, nick, userhost, target, cmd, args):
+	flag = 0
+	cmdflag = 0
 	if is_channel(target):
 		# show only commands that trigger from channel
-		flag = CMD_CHANNEL
+		flag = FLAG_ONLY_CHANNEL
 	else:
 		# show everything
-		flag = CMD_QUERY | CMD_CHANNEL
+		flag = FLAG_ONLY_QUERY
 		target = nick
+		if is_owner(userhost):
+			cmdflag = FLAG_ONLY_OWNER
+
+	flag |= cmdflag
 
 	irc.notice(target, 'Mögliche Befehle:')
 	cmd_list = []
 	for cmd in msg_triggers:
-		if cmd[1] and cmd[2] & flag == flag:
+		if cmd[1] and (flag & (cmd[2] | cmdflag) == (cmd[2] | cmdflag)):
 			if type(cmd[1]) == list:
 				x = ' oder '.join(cmd[0]) + ' ' + cmd[1][0]
 				y = cmd[1][1]
@@ -251,23 +257,19 @@ def time(irc, nick, userhost, target, cmd, args):
 	irc.notice(target, datetime.now().strftime("%Y-%m-%d %H:%M"))
 	return True
 
-def ignore(irc, nick, userhost, target, cmd, args):
+def owner_ignore(irc, nick, userhost, target, cmd, args):
 	# print '--- ignore <%s!%s/%s> %s: (%s)' % (nick, userhost, target, cmd, args)
 	try:
-		usermask, channel, pw = args.split()
+		usermask, channel = args.split()
 		if not '!' in usermask:
 			usermask += '!*@*'
 		if not '@' in usermask:
 			usermask += '@*'
-		if pw == config.ownerpw:
-			ignores = Ignores(channel)
-			ignores.add(usermask)
-			ignores.save()
-			irc.notice(nick, "Added %s to ignore list for %s." % (usermask, channel))
-			return True
-		else:
-			irc.notice(nick, "Nice try.")
-		return False
+		ignores = Ignores(channel)
+		ignores.add(usermask)
+		ignores.save()
+		irc.notice(nick, "Added %s to ignore list for %s." % (usermask, channel))
+		return True
 	except ValueError, AttributeError:
 		irc.notice(nick, "Süntaks, kennst du es? Fersuche !help.")
 		return True
@@ -276,32 +278,56 @@ def check_ignored(target, usermask):
 	ignores = Ignores(target)
 	return ignores.match(usermask)
 
-def ignored(irc, nick, userhost, target, cmd, args):
+def owner_ignored(irc, nick, userhost, target, cmd, args):
 	# print '--- ignored <%s!%s/%s> %s: (%s)' % (nick, userhost, target, cmd, args)
 	try:
-		usermask, channel, pw = args.split()
+		usermask, channel = args.split()
 		if not '!' in usermask:
 			usermask += '!*@*'
 		if not '@' in usermask:
 			usermask += '@*'
-		if pw == config.ownerpw:
-			if check_ignored(channel, usermask):
-				irc.notice(nick, "Yup, %s is ignored in %s." % (usermask, channel))
-			else:
-				irc.notice(nick, "Nope, %s is not ignored in %s." % (usermask, channel))
-			return True
+		if check_ignored(channel, usermask):
+			irc.notice(nick, "Yup, %s is ignored in %s." % (usermask, channel))
 		else:
-			irc.notice(nick, "Nice try.")
-		return False
+			irc.notice(nick, "Nope, %s is not ignored in %s." % (usermask, channel))
+		return True
 	except ValueError:
 		irc.notice(nick, "Süntaks, kennst du es? Fersuche !help.")
 		return True
 
-def quit(irc, nick, userhost, target, cmd, args):
-	if args == config.ownerpw:
-		irc.send('QUIT', ':Sit. Stay. Good girl.')
-		raise SystemExit
+def is_owner(userhost):
+	return identified_owners.has_key(userhost) and identified_owners[userhost]
+
+def identify(irc, nick, userhost, target, cmd, args):
+	if args and args.split()[0] == config.ownerpw:
+		global identified_owners
+		identified_owners[userhost] = True
+		irc.notice(nick, 'You have been logged in with userhost %s.' % userhost)
 		return True
+
+def owner_logout(irc, nick, userhost, target, cmd, args):
+	try:
+		global identified_owners
+		del identified_owners[userhost]
+		irc.notice(nick, 'You have been logged out.')
+	except Exception as e:
+		irc.notice(nick, 'Not logged in.')
+	return True
+
+def owner_quit(irc, nick, userhost, target, cmd, args):
+	if args:
+		irc.send('QUIT', ':' + args)
+	else:
+		irc.send('QUIT', ':Sit. Stay. Good girl.')
+	irc.end()
+	return True
+
+def owner_raw(irc, nick, userhost, target, cmd, args):
+	if args:
+		irc.send(args)
+	else:
+		irc.notice(nick, '!raw needs an argument.')
+	return True
 
 def handle_privmsg(irc, nick, userhost, target, message):
 	if check_ignored(target, nick + '!' + userhost):
@@ -347,13 +373,20 @@ def handle_privmsg(irc, nick, userhost, target, message):
 		cmd, args = message, None
 	cmd = cmd.lower()
 
+	flag = 0
+	cmdflag = 0
 	if is_channel(target):
-		flag = CMD_CHANNEL
+		flag = FLAG_ONLY_CHANNEL
 	else:
-		flag = CMD_QUERY
+		flag = FLAG_ONLY_QUERY
+
+	if is_owner(userhost):
+		cmdflag = FLAG_ONLY_OWNER
+
+	flag |= cmdflag
 
 	for trigger in msg_triggers:
-		if trigger[2] & flag == flag:
+		if flag & (trigger[2] | cmdflag) == (trigger[2] | cmdflag):
 			if cmd in trigger[0]:
 				splatargs = trigger[4] if len(trigger) > 4 else []
 				kwargs = trigger[5] if len(trigger) > 5 else {}
@@ -366,8 +399,9 @@ def handle_kick(irc, nick, userhost, target, victim):
 	irc.send('JOIN', target)
 	return True
 
-def handle_quit(irc, nick, userhost, target, victim):
-	irc.reconnect()
+def handle_quit(irc, nick, userhost, target, args):
+	if target == irc.nick:
+		irc.reconnect()
 	return True
 
 def handle_err_nicknameinuse(irc, nick, userhost, target, victim):
@@ -385,33 +419,41 @@ def defer(delay, fun, *args, **kwargs):
 	t.start()
 	return t
 
-CMD_CHANNEL = 1
-CMD_QUERY = 2
+FLAG_NONE = 0
+FLAG_ONLY_CHANNEL = 1
+FLAG_ONLY_QUERY = 2
+FLAG_ONLY_OWNER = 4
 
 msg_triggers = [
-	# triggers, CMD_CHANNEL | CMD_QUERY, func, *args, **kwargs
-	[['!info'], None, CMD_CHANNEL, info],
-	[['!help'], 'Diese Liste', CMD_CHANNEL | CMD_QUERY, help],
+	# triggers, FLAG_ONLY_CHANNEL | FLAG_ONLY_QUERY, func, *args, **kwargs
+	[['!info'], None, FLAG_NONE, info],
+	[['!help'], 'Diese Liste', FLAG_NONE, help],
 	# Twitter
-	[['!tweet', '!twitter'], ['<Text>', 'Twittert <Text> als '+config.twitter_account], CMD_CHANNEL, twitter, ['tweet']],
-	[['!reply', '!re'], ['<Tweet-URL oder ID> <Text>', 'Twittert <Text> als Antwort auf den angegebenen Tweet'], CMD_CHANNEL, twitter, ['reply']],
-	[['!fav', '!favorite', '!favourite'], ['<Tweet-URL oder ID>', 'Favt den angegebenen Tweet'], CMD_CHANNEL, twitter, ['fav']],
-	[['!rt', '!retweet'], ['<Tweet-URL oder ID>', 'Retweetet den angegebenen Tweet'], CMD_CHANNEL, twitter, ['rt']],
-	[['!veto'], 'Stoppt die aktuelle Twitter-Aktion', CMD_CHANNEL, veto],
+	[['!tweet', '!twitter'], ['<Text>', 'Twittert <Text> als '+config.twitter_account], FLAG_ONLY_CHANNEL, twitter, ['tweet']],
+	[['!reply', '!re'], ['<Tweet-URL oder ID> <Text>', 'Twittert <Text> als Antwort auf den angegebenen Tweet'], FLAG_ONLY_CHANNEL, twitter, ['reply']],
+	[['!fav', '!favorite', '!favourite'], ['<Tweet-URL oder ID>', 'Favt den angegebenen Tweet'], FLAG_ONLY_CHANNEL, twitter, ['fav']],
+	[['!rt', '!retweet'], ['<Tweet-URL oder ID>', 'Retweetet den angegebenen Tweet'], FLAG_ONLY_CHANNEL, twitter, ['rt']],
+	[['!veto'], 'Stoppt die aktuelle Twitter-Aktion', FLAG_ONLY_CHANNEL, veto],
 	# Quotes
-	[['!addquote'], ['<Text>', 'Text als Quote hinzufügen'], CMD_CHANNEL, quote_add],
-	[['!quote'], 'Zufällige Quote anzeigen', CMD_CHANNEL, quote_show],
-	[['!quote'], ['<Nummer>', 'Bestimmte Quote anzeigen'], CMD_CHANNEL, quote_show],
-	#[['!delquote'], ['<Nummer>', 'Quote löschen'], CMD_CHANNEL, quote_del],
+	[['!addquote'], ['<Text>', 'Text als Quote hinzufügen'], FLAG_ONLY_CHANNEL, quote_add],
+	[['!quote'], 'Zufällige Quote anzeigen', FLAG_ONLY_CHANNEL, quote_show],
+	[['!quote'], ['<Nummer>', 'Bestimmte Quote anzeigen'], FLAG_ONLY_CHANNEL, quote_show],
+	[['!delquote'], ['<Nummer>', 'Quote löschen'], FLAG_ONLY_CHANNEL | FLAG_ONLY_OWNER, quote_del],
 	# Tools
-	[['!time'], 'Systemzeit ausgeben', CMD_CHANNEL | CMD_QUERY, time],
-	[['!ignore'], ['<Usermask> <Channel> <Owner-Passwort>', 'Usermask von Botbenutzung ausschließen'], CMD_QUERY, ignore],
-	[['!ignored'], ['<Usermask> <Channel> <Owner-Passwort>', 'Check if <usermask> is ignored in <target>'], CMD_QUERY, ignored],
-	[['!quit'], ['<Owner-Passwort>', 'Raus!'], CMD_QUERY, quit],
+	[['!time'], 'Systemzeit ausgeben', FLAG_ONLY_OWNER, time],
+  # owner stuff
+	[['identify'], ['<Owner-Passwort>', 'Als Owner anmelden.'], FLAG_ONLY_QUERY, identify],
+	[['logout'], 'Abmelden.', FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_logout],
+	[['!ignore'], ['<Usermask> <Channel>', 'Usermask von Botbenutzung ausschließen'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_ignore],
+	[['!ignored'], ['<Usermask> <Channel>', 'Check if <usermask> is ignored in <target>'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_ignored],
+	[['!quit'], ['[Quit-Message]', 'Raus!'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_quit],
+	[['!raw'], ['<Command>', 'Talk dirty to me.'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_raw],
 ]
 
 if not hasattr(config, 'altnick'):
 	config.altnick = config.nick + '_'
+
+identified_owners = {}
 
 veto_timer = None
 
