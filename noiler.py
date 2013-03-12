@@ -370,10 +370,20 @@ def handle_quit(irc, nick, userhost, target, victim):
 	irc.reconnect()
 	return True
 
+def handle_err_nicknameinuse(irc, nick, userhost, target, victim):
+	irc.send('NICK', config.altnick)
+	defer(30, irc.send, 'NICK', config.nick)
+	return True
+
 def handle_unknown(irc, prefix, command, args):
 	# print '@@@ UNKNOWN: %s %s %s' % (prefix, command, args)
 	return False
 
+def defer(delay, fun, *args, **kwargs):
+	t = threading.Timer(delay, fun, args=args, kwargs=kwargs)
+	t.daemon = True
+	t.start()
+	return t
 
 CMD_CHANNEL = 1
 CMD_QUERY = 2
@@ -399,6 +409,9 @@ msg_triggers = [
 	[['!ignored'], ['<Usermask> <Channel> <Owner-Passwort>', 'Check if <usermask> is ignored in <target>'], CMD_QUERY, ignored],
 	[['!quit'], ['<Owner-Passwort>', 'Raus!'], CMD_QUERY, quit],
 ]
+
+if not hasattr(config, 'altnick'):
+	config.altnick = config.nick + '_'
 
 veto_timer = None
 
@@ -431,6 +444,7 @@ irc = IRCConnection(server=config.server, port=config.port, ssl=config.ssl, pass
 irc.on('privmsg', handle_privmsg)
 irc.on('kick', handle_kick)
 irc.on('quit', handle_quit)
+irc.on('ERR_NICKNAMEINUSE', handle_err_nicknameinuse)
 #irc.on('*', handle_unknown)
 
 t = threading.Thread(target=twitter_mentions_thread, args=(api, irc))

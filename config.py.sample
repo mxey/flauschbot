@@ -3,17 +3,25 @@ server = 'irc.freenode.net'
 port = 6667
 ssl = False
 password = ''
+
+# preferred nick
 nick = 'oiler_er_innen'
+# alternate nick
+altnick = 'noiler'
 realname = 'oiler_er_innen'
 user = 'oiler_er_innen'
+
+# channel to join
 chan = '#oilertest'
+
 # to make the bot !quit and !ignore and stuff
 ownerpw = 'trggr'
 
-vetotime = 15
-
 # name of your twitter account, for informational purposes only
 twitter_account = '@ev'
+
+# veto time for twitter functions
+vetotime = 15
 
 # get these from dev.twitter.com
 consumer_key = 'YOUR CONSUMER KEY'
