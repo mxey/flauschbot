@@ -184,7 +184,7 @@ def veto(irc, nick, userhost, target, cmd, args):
 	return False
 
 def info(irc, nick, userhost, target, cmd, args):
-	irc.notice(target, 'Quote(s) und mehr durch '+config.nick+'!')
+	irc.notice(target, 'Quote(s) und mehr Anti-Egalitäres durch '+config.nick+'!')
 	return True
 
 def help(irc, nick, userhost, target, cmd, args):
@@ -202,7 +202,6 @@ def help(irc, nick, userhost, target, cmd, args):
 
 	flag |= cmdflag
 
-	irc.notice(target, 'Mögliche Befehle:')
 	cmd_list = []
 	for cmd in msg_triggers:
 		if cmd[1] and (flag & (cmd[2] | cmdflag) == (cmd[2] | cmdflag)):
@@ -213,7 +212,7 @@ def help(irc, nick, userhost, target, cmd, args):
 				x = ' oder '.join(cmd[0])
 				y = cmd[1]
 			cmd_list.append(x)
-	irc.notice(target, ', '.join(cmd_list))
+	irc.notice(target, 'Mögliche Befehle: ' + ', '.join(cmd_list))
 
 	return True
 
