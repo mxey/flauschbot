@@ -403,6 +403,10 @@ def handle_quit(irc, nick, userhost, target, args):
 		irc.reconnect()
 	return True
 
+def handle_error(irc, nick, userhost, target, args):
+	irc.reconnect()
+	return True
+
 def handle_err_nicknameinuse(irc, nick, userhost, target, victim):
 	irc.send('NICK', config.altnick)
 	defer(30, irc.send, 'NICK', config.nick)
@@ -485,6 +489,7 @@ irc = IRCConnection(server=config.server, port=config.port, ssl=config.ssl, pass
 irc.on('privmsg', handle_privmsg)
 irc.on('kick', handle_kick)
 irc.on('quit', handle_quit)
+irc.on('error', handle_error)
 irc.on('ERR_NICKNAMEINUSE', handle_err_nicknameinuse)
 #irc.on('*', handle_unknown)
 
