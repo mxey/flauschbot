@@ -5,8 +5,8 @@ import config
 
 import threading
 import tweepy
-
-# for the title tag extraction
+import tempfile
+import os
 import requests
 import html5lib
 import elementtree
@@ -33,10 +33,16 @@ class Quotes:
 		self.quotes = self.f.read().splitlines()
 
 	def save(self):
-		self.f.seek(0)
-		self.f.truncate()
-		self.f.write('\n'.join(self.quotes))
-		self.f.flush()
+		dirname, basename = os.path.split(self.fn)
+		# try:
+		tf = tempfile.NamedTemporaryFile(prefix=basename, dir=dirname, delete=False)
+		tf.write('\n'.join(self.quotes))
+		tf.flush()
+		os.fsync(tf.fileno())
+		os.rename(tf.name, self.fn)
+		self.f = open(self.fn, 'a+')
+		# except Exception as e:
+		# 	log_error("%s: %s" % (e.__class__, e))
 
 	def add(self, quote):
 		self.quotes.append(quote)
@@ -218,6 +224,9 @@ def help(irc, nick, userhost, target, cmd, args):
 
 def quote_add(irc, nick, userhost, target, cmd, args):
 	# print '--- quote_add <%s!%s/%s> %s: (%s)' % (nick, userhost, target, cmd, args)
+	if args is None:
+		irc.notice(target, "Quote was?")
+		return True
 	q = Quotes(target)
 	q.add(args)
 	q.save()
@@ -226,6 +235,9 @@ def quote_add(irc, nick, userhost, target, cmd, args):
 
 def quote_del(irc, nick, userhost, target, cmd, args):
 	# print '--- quote_del <%s!%s/%s> %s: (%s)' % (nick, userhost, target, cmd, args)
+	if args is None:
+		irc.notice(target, "Lösche was?")
+		return True
 	q = Quotes(target)
 	q.delete(int(args))
 	q.save()
@@ -457,6 +469,11 @@ if not hasattr(config, 'altnick'):
 	config.altnick = config.nick + '_'
 
 identified_owners = {}
+try:
+	for uh in config.owners:
+		identified_owners[uh] = True
+except Exception:
+	pass
 
 veto_timer = None
 
