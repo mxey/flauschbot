@@ -34,15 +34,12 @@ class Quotes:
 
 	def save(self):
 		dirname, basename = os.path.split(self.fn)
-		# try:
 		tf = tempfile.NamedTemporaryFile(prefix=basename, dir=dirname, delete=False)
 		tf.write('\n'.join(self.quotes))
 		tf.flush()
 		os.fsync(tf.fileno())
 		os.rename(tf.name, self.fn)
 		self.f = open(self.fn, 'a+')
-		# except Exception as e:
-		# 	log_error("%s: %s" % (e.__class__, e))
 
 	def add(self, quote):
 		self.quotes.append(quote)
@@ -74,10 +71,13 @@ class Ignores:
 		self.ignored = self.f.read().splitlines()
 
 	def save(self):
-		self.f.seek(0)
-		self.f.truncate()
-		self.f.write('\n'.join(self.ignored))
-		self.f.flush()
+		dirname, basename = os.path.split(self.fn)
+		tf = tempfile.NamedTemporaryFile(prefix=basename, dir=dirname, delete=False)
+		tf.write('\n'.join(self.quotes))
+		tf.flush()
+		os.fsync(tf.fileno())
+		os.rename(tf.name, self.fn)
+		self.f = open(self.fn, 'a+')
 
 	def match(self, usermask):
 		return (self.index(usermask) is not None)
