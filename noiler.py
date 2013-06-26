@@ -480,13 +480,13 @@ veto_timer = None
 auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
 auth.set_access_token(config.access_token, config.access_token_secret)
 
-api = tweepy.API(auth)
+api = tweepy.API(auth, api_root='/1.1')
 
 def twitter_mentions_thread(api, irc):
 	while True:
 		try:
-			sleep(30)
-			for tweet in api.mentions():
+			sleep(60)
+			for tweet in api.mentions_timeline():
 				if tweet.created_at > datetime.utcnow() - timedelta(seconds=30):
 					irc.notice(config.chan, ("Tweet %s von @%s: %s" % (tweet.id_str, tweet.user.screen_name, unescape(tweet.text).replace('\n', ' '))).encode('utf-8'))
 		except Exception, e:
