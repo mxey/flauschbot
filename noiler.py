@@ -127,7 +127,7 @@ def twitter(irc, nick, userhost, target, cmd, args, what):
 				if m.group('username'):
 					k['in_reply_to_screen_name'] = m.group('username')
 					a = '@' + m.group('username') + ' ' + ' '.join(args[1:])
-				elif args[1].startswith('@'):
+				elif len(args) > 0 and args[1].startswith('@'):
 					k['in_reply_to_screen_name'] = args[1]
 					a = ' '.join(args[1:])
 				else:
