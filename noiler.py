@@ -451,19 +451,19 @@ msg_triggers = [
 	[['!rt', '!retweet'], ['<Tweet-URL oder ID>', 'Retweetet den angegebenen Tweet'], FLAG_ONLY_CHANNEL, twitter, ['rt']],
 	[['!veto'], 'Stoppt die aktuelle Twitter-Aktion', FLAG_ONLY_CHANNEL, veto],
 	# Quotes
-	[['!addquote'], ['<Text>', 'Text als Quote hinzufügen'], FLAG_ONLY_CHANNEL, quote_add],
-	[['!quote'], 'Zufällige Quote anzeigen', FLAG_ONLY_CHANNEL, quote_show],
-	[['!quote'], ['<Nummer>', 'Bestimmte Quote anzeigen'], FLAG_ONLY_CHANNEL, quote_show],
-	[['!delquote'], ['<Nummer>', 'Quote löschen'], FLAG_ONLY_CHANNEL | FLAG_ONLY_OWNER, quote_del],
+	# [['!addquote'], ['<Text>', 'Text als Quote hinzufügen'], FLAG_ONLY_CHANNEL, quote_add],
+	# [['!quote'], 'Zufällige Quote anzeigen', FLAG_ONLY_CHANNEL, quote_show],
+	# [['!quote'], ['<Nummer>', 'Bestimmte Quote anzeigen'], FLAG_ONLY_CHANNEL, quote_show],
+	# [['!delquote'], ['<Nummer>', 'Quote löschen'], FLAG_ONLY_CHANNEL | FLAG_ONLY_OWNER, quote_del],
 	# Tools
-	[['!time'], 'Systemzeit ausgeben', FLAG_ONLY_OWNER, time],
+	# [['!time'], 'Systemzeit ausgeben', FLAG_ONLY_OWNER, time],
   # owner stuff
-	[['identify'], ['<Owner-Passwort>', 'Als Owner anmelden.'], FLAG_ONLY_QUERY, identify],
-	[['logout'], 'Abmelden.', FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_logout],
-	[['!ignore'], ['<Usermask> <Channel>', 'Usermask von Botbenutzung ausschließen'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_ignore],
-	[['!ignored'], ['<Usermask> <Channel>', 'Check if <usermask> is ignored in <target>'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_ignored],
-	[['!quit'], ['[Quit-Message]', 'Raus!'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_quit],
-	[['!raw'], ['<Command>', 'Talk dirty to me.'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_raw],
+	# [['identify'], ['<Owner-Passwort>', 'Als Owner anmelden.'], FLAG_ONLY_QUERY, identify],
+	# [['logout'], 'Abmelden.', FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_logout],
+	# [['!ignore'], ['<Usermask> <Channel>', 'Usermask von Botbenutzung ausschließen'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_ignore],
+	# [['!ignored'], ['<Usermask> <Channel>', 'Check if <usermask> is ignored in <target>'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_ignored],
+	# [['!quit'], ['[Quit-Message]', 'Raus!'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_quit],
+	# [['!raw'], ['<Command>', 'Talk dirty to me.'], FLAG_ONLY_QUERY | FLAG_ONLY_OWNER, owner_raw],
 ]
 
 if not hasattr(config, 'altnick'):
