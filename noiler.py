@@ -10,6 +10,7 @@ import os
 import requests
 import html5lib
 import elementtree
+import sys
 
 from noilib.helpers import *
 from noilib.connection import IRCConnection
