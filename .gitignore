@@ -7,3 +7,5 @@ lib/
 include/
 share/
 
+
+/venv
