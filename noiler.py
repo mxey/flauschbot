@@ -180,7 +180,7 @@ def vetoable(irc, target, f):
 
 def veto(irc, nick, userhost, target, cmd, args):
 	global veto_timer
-	
+
 	# print '--- veto <%s!%s/%s> (%s, %s)' % (nick, userhost, target, cmd, args)
 
 	if veto_timer and veto_timer.is_alive():
@@ -346,38 +346,6 @@ def handle_privmsg(irc, nick, userhost, target, message):
 		# silently ignore
 		log('### ignored command from %s!%s' % (nick, userhost))
 		return True
-
-	if is_channel(target):
-		m = re.search(r"https?://(?:[^.]+.)?twitter.com/(?P<username>[^/]*)/status(?:es)?/(?P<status_id>\d+)", message)
-		if m:
-			try:
-				tweet = api.get_status(m.group('status_id'))
-				irc.notice(target, ("Tweet von @%s: %s" % (tweet.user.screen_name, unescape(tweet.text).replace('\n', ' '))).encode('utf-8'))
-			except Exception as e:
-				irc.notice(target, 'Das hat nicht geklappt: %s' % e)
-		else:
-			m = re.search(r"((?<=\()https?://(?:[A-Za-z0-9\.\-_~:/\?#\[\]@!\$&'\(\)\*\+,;=]|%[A-Fa-f0-9]{2})+(?=\)))|(?:https?://(?:[A-Za-z0-9\.\-_~:/\?#\[\]@!\$&'\(\)\*\+,;=]|%[A-Fa-f0-9]{2})+)", message)
-			if m:
-				def lookup_url(url, irc):
-					try:
-						r = requests.head(url, timeout=3, verify=False)
-						if any(r.headers['content-type'].split(';')[0] in s for s in ['text/html', 'text/xml', 'application/xhtml+xml']):
-							r = requests.get(url, timeout=3, verify=False)
-							doc = html5lib.parse(r.content, treebuilder="etree", namespaceHTMLElements=False)
-							title = doc.find('.//title').text.strip()
-							title = ' '.join(title.split())
-							irc.notice(target, ("%s <%s>" % (title, url)).encode('utf-8'))
-						else:
-							log_error('Ich kann nicht mit in zu "%s"-Dokumenten.' % r.headers['content-type'])
-					except (AttributeError, requests.exceptions.RequestException) as e:
-						log_error("%s: %s" % (type(e).__name__, e))
-					except Exception as e:
-						log_error("%s: %s" % (type(e).__name__, e))
-						irc.notice(target, 'Fehler bei <%s>: %s: %s' % (url, type(e).__name__, e))
-
-				t = threading.Thread(target=lookup_url, args=(m.group(0), irc))
-				t.daemon = True
-				t.start()
 
 	try:
 		cmd, args = message.split(' ', 1)
